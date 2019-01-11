@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import socketIOClient from 'socket.io-client'
+import * as socketIOClient from 'socket.io-client'
+import axios from 'axios';
 
 // Making the App component
 class App extends Component {
@@ -7,7 +8,7 @@ class App extends Component {
     super()
 
     this.state = {
-      endpoint: "http://localhost:5050", // this is where we are connecting to with sockets
+      endpoint: "http://localhost:5050/", // this is where we are connecting to with sockets
       color: 'white'
         ///
 
@@ -16,11 +17,22 @@ class App extends Component {
 
     // sending sockets
     send = () => {
-      const socket = socketIOClient(this.state.endpoint);
-      socket.emit('change color', this.state.color) // change 'red' to this.state.color
+      this.socket = socketIOClient(this.state.endpoint,
+        {
+          secure: true,
+          rejectUnauthorized: false,
+        });
+      console.log('send: ', this.state.color);
+      axios.get(`${this.state.endpoint}api?color=${this.state.color}`)
+      .then(res => {
+        this.socket.on('change color', (col) => {
+          console.log('listen: ', col);
+          return(
+            document.body.style.backgroundColor = col
+          );
+        })
+      })
     }
-
-    ///
 
     // adding the function
     setColor = (color) => {
@@ -30,13 +42,6 @@ class App extends Component {
     ///
 
     render() {
-      // testing for socket connections
-
-      const socket = socketIOClient(this.state.endpoint);
-      socket.on('change color', (col) => {
-        document.body.style.backgroundColor = col
-      })
-
       return (
         <div style={{ textAlign: "center" }}>
           <button onClick={() => this.send() }>Change Color</button>
